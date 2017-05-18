@@ -22,7 +22,14 @@ android {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.android.support:support-v4:25.3.1'
     compile project(':GraffitiLib')
-//    compile project(':ImageSelctorLib-release')
-    compile 'cn.hzw.imageselector:library:1.0'
+    compile project(':library')
+//    compile 'cn.hzw.imageselector:library:1.0'
+    //权限
+    compile 'com.github.hotchemi:permissionsdispatcher:2.4.0'
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.4.0'
+    debugCompile 'com.squareup.leakcanary:leakcanary-android:1.5'
+    testCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
+    releaseCompile 'com.squareup.leakcanary:leakcanary-android-no-op:1.5'
 }

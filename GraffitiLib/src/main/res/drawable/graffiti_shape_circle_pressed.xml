@@ -2,5 +2,7 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval"
     android:useLevel="false">
-        <solid android:color="@color/graffiti_btn_pressed_color" /> <!-- 定义填充的颜色值 -->
+        <solid android:color="@color/graffiti_btn_pressed_color" />
+        <!-- 定义填充的颜色值 -->
+        <size android:height="40dp" android:width="40dp"/>
 </shape>

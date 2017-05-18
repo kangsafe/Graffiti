@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:background="#232323"
@@ -88,24 +89,24 @@
                     android:layout_height="1dp"
                     android:layout_weight="1" />
 
-                <Button
-                    android:id="@+id/btn_clear"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/graffiti_btn_effect_round"
-                    android:text="清屏"
-                    android:textColor="#000000"
-                    android:textSize="13dp" />
+                <!--<Button-->
+                <!--android:id="@+id/btn_clear"-->
+                <!--android:layout_width="40dp"-->
+                <!--android:layout_height="40dp"-->
+                <!--android:background="@drawable/graffiti_btn_effect_round"-->
+                <!--android:text="清屏"-->
+                <!--android:textColor="#000000"-->
+                <!--android:textSize="13dp" />-->
 
-                <Button
-                    android:id="@+id/btn_undo"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginLeft="5dp"
-                    android:background="@drawable/graffiti_btn_effect_round"
-                    android:text="撤销"
-                    android:textColor="#000000"
-                    android:textSize="13dp" />
+                <!--<Button-->
+                <!--android:id="@+id/btn_undo"-->
+                <!--android:layout_width="40dp"-->
+                <!--android:layout_height="40dp"-->
+                <!--android:layout_marginLeft="5dp"-->
+                <!--android:background="@drawable/graffiti_btn_effect_round"-->
+                <!--android:text="撤销"-->
+                <!--android:textColor="#000000"-->
+                <!--android:textSize="13dp" />-->
             </LinearLayout>
 
             <LinearLayout
@@ -285,13 +286,13 @@
             android:gravity="center_horizontal"
             android:orientation="horizontal">
 
+
             <Button
                 android:id="@+id/btn_move_pic"
                 android:layout_width="@dimen/title_bar_height"
                 android:layout_height="@dimen/title_bar_height"
                 android:layout_marginBottom="12dp"
                 android:background="@drawable/graffiti_btn_effect_rect_pressed_black"
-
                 android:text="M"
                 android:textColor="#ffffff"
                 android:textSize="16dp"
@@ -333,6 +334,22 @@
                 android:scaleType="fitXY"
                 android:src="@drawable/graffiti_rotate"
                 android:textSize="20dp" />
+
+            <com.mikepenz.iconics.view.IconicsImageView
+                android:id="@+id/graffiti_eraser"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                app:iiv_color="@android:color/white"
+                app:iiv_icon="faw-eraser"
+                app:iiv_padding="10dp" />
+
+            <com.mikepenz.iconics.view.IconicsImageView
+                android:id="@+id/graffiti_undo"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                app:iiv_color="@android:color/white"
+                app:iiv_icon="faw-undo"
+                app:iiv_padding="15dp" />
         </LinearLayout>
 
         <LinearLayout

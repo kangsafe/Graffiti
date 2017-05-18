@@ -1,8 +1,10 @@
 package cn.hzw.graffitidemo;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
@@ -11,11 +13,17 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 import cn.forward.androids.utils.LogUtil;
+import cn.hzw.graffiti.Graffiti2Activity;
 import cn.hzw.graffiti.GraffitiActivity;
 import cn.hzw.graffiti.GraffitiParams;
 import cn.hzw.imageselector.ImageLoader;
 import cn.hzw.imageselector.ImageSelectorActivity;
+import permissions.dispatcher.NeedsPermission;
+import permissions.dispatcher.RuntimePermissions;
 
+import static cn.forward.androids.base.BaseApplication.showToast;
+
+@RuntimePermissions
 public class MainActivity extends Activity {
 
     public static final int REQ_CODE_SELECT_IMAGE = 100;
@@ -30,10 +38,18 @@ public class MainActivity extends Activity {
         findViewById(R.id.btn_select_image).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ImageSelectorActivity.startActivityForResult(REQ_CODE_SELECT_IMAGE, MainActivity.this, null, false);
+                MainActivityPermissionsDispatcher.showCameraWithCheck(MainActivity.this);
+
             }
         });
         mPath = (TextView) findViewById(R.id.img_path);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // NOTE: delegate the permission handling to generated method
+        MainActivityPermissionsDispatcher.onRequestPermissionsResult(this, requestCode, grantResults);
     }
 
     @Override
@@ -61,7 +77,7 @@ public class MainActivity extends Activity {
                 params.mAmplifierScale = 2.5f;
                 */
 
-                GraffitiActivity.startActivityForResult(MainActivity.this, params, REQ_CODE_GRAFFITI);
+                Graffiti2Activity.startActivityForResult(MainActivity.this, params, REQ_CODE_GRAFFITI);
             }
         } else if (requestCode == REQ_CODE_GRAFFITI) {
             if (data == null) {
@@ -78,5 +94,10 @@ public class MainActivity extends Activity {
                 Toast.makeText(getApplicationContext(), "error", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    @NeedsPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+    void showCamera() {
+        ImageSelectorActivity.startActivityForResult(REQ_CODE_SELECT_IMAGE, MainActivity.this, null, false);
     }
 }

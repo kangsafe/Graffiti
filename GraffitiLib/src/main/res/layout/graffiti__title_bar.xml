@@ -38,6 +38,7 @@
             android:maxLines="1"
             android:singleLine="true"
             android:text="涂鸦"
+            android:visibility="invisible"
             android:textColor="#ffffff"
             android:textSize="18dp"/>
 

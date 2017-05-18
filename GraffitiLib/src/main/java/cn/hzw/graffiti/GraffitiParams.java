@@ -3,6 +3,7 @@ package cn.hzw.graffiti;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -11,6 +12,8 @@ import android.os.Parcelable;
  */
 public class GraffitiParams implements Parcelable {
 
+    public int colorSelected = Color.YELLOW;
+    public int colorNormal = Color.WHITE;
     /**
      * 图片路径
      */
@@ -79,7 +82,8 @@ public class GraffitiParams implements Parcelable {
             params.mAmplifierScale = in.readFloat();
             params.mIsFullScreen = in.readInt() == 1;
             params.mPaintSize = in.readFloat();
-
+            params.colorNormal = in.readInt();
+            params.colorSelected = in.readInt();
             return params;
         }
 
@@ -101,6 +105,8 @@ public class GraffitiParams implements Parcelable {
         dest.writeFloat(mAmplifierScale);
         dest.writeInt(mIsFullScreen ? 1 : 0);
         dest.writeFloat(mPaintSize);
+        dest.writeInt(colorNormal);
+        dest.writeInt(colorSelected);
     }
 
     @Override

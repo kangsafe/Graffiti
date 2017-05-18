@@ -2,7 +2,6 @@ package cn.hzw.graffiti;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,11 +9,11 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.os.PersistableBundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -22,10 +21,16 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.mikepenz.iconics.view.IconicsImageView;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -34,13 +39,18 @@ import java.io.IOException;
 import cn.forward.androids.utils.ImageUtils;
 import cn.forward.androids.utils.LogUtil;
 import cn.forward.androids.utils.ThreadUtil;
+import cn.hzw.graffiti.pop.OnEraserListener;
+import cn.hzw.graffiti.pop.PopUtils;
+
+import static cn.hzw.graffiti.StrokeRecord.STROKE_TYPE_DRAW;
+import static cn.hzw.graffiti.StrokeRecord.STROKE_TYPE_ERASER;
 
 /**
  * 涂鸦界面，根据GraffitiView的接口，提供页面交互
  * （这边代码和ui比较粗糙，主要目的是告诉大家GraffitiView的接口具体能实现什么功能，实际需求中的ui和交互需另提别论）
  * Created by huangziwei(154330138@qq.com) on 2016/9/3.
  */
-public class GraffitiActivity extends AppCompatActivity {
+public class Graffiti2Activity extends AppCompatActivity implements OnEraserListener {
 
     public static final String TAG = "Graffiti";
 
@@ -55,10 +65,12 @@ public class GraffitiActivity extends AppCompatActivity {
      * @see GraffitiParams
      */
     public static void startActivityForResult(Activity activity, GraffitiParams params, int requestCode) {
-        Intent intent = new Intent(activity, GraffitiActivity.class);
-        intent.putExtra(GraffitiActivity.KEY_PARAMS, params);
+        Intent intent = new Intent(activity, Graffiti2Activity.class);
+        intent.putExtra(Graffiti2Activity.KEY_PARAMS, params);
         activity.startActivityForResult(intent, requestCode);
     }
+
+    static GraffitiParams params = new GraffitiParams();
 
     /**
      * 启动涂鸦界面
@@ -71,7 +83,7 @@ public class GraffitiActivity extends AppCompatActivity {
      */
     @Deprecated
     public static void startActivityForResult(Activity activity, String imagePath, String savePath, boolean isDir, int requestCode) {
-        GraffitiParams params = new GraffitiParams();
+//
         params.mImagePath = imagePath;
         params.mSavePath = savePath;
         params.mSavePathIsDir = isDir;
@@ -79,11 +91,11 @@ public class GraffitiActivity extends AppCompatActivity {
     }
 
     /**
-     * {@link GraffitiActivity#startActivityForResult(Activity, String, String, boolean, int)}
+     * {@link Graffiti2Activity#startActivityForResult(Activity, String, String, boolean, int)}
      */
     @Deprecated
     public static void startActivityForResult(Activity activity, String imagePath, int requestCode) {
-        GraffitiParams params = new GraffitiParams();
+//        GraffitiParams params = new GraffitiParams();
         params.mImagePath = imagePath;
         startActivityForResult(activity, params, requestCode);
     }
@@ -123,7 +135,6 @@ public class GraffitiActivity extends AppCompatActivity {
     private View mShapeModeContainer;
     private View mSelectedTextEditContainer;
     private View mEditContainer;
-
     private int mTouchSlop;
 
     private AlphaAnimation mViewShowAnimation, mViewHideAnimation; // view隐藏和显示时用到的渐变动画
@@ -183,7 +194,7 @@ public class GraffitiActivity extends AppCompatActivity {
             return;
         }
 
-        setContentView(R.layout.layout_graffiti);
+        setContentView(R.layout.layout_graffiti2);
         mFrameLayout = (FrameLayout) findViewById(R.id.graffiti_container);
 
         // /storage/emulated/0/DCIM/Graffiti/1479369280029.jpg
@@ -295,12 +306,27 @@ public class GraffitiActivity extends AppCompatActivity {
         mOnClickListener = new GraffitiOnClickListener();
         mTouchSlop = ViewConfiguration.get(getApplicationContext()).getScaledTouchSlop();
         initView();
+        initDrawParams();//初始化绘画参数
+        initPopupWindows();//初始化弹框
+    }
+
+    private void initPopupWindows() {
+        PopUtils.getInstance(this).addEraserPopLinstener(this);
+    }
+
+    int strokeMode;//模式
+    int strokeType;//模式
+    boolean clickEraser = false;
+
+    private void initDrawParams() {
+        //默认为画笔模式
+        strokeMode = STROKE_TYPE_DRAW;
     }
 
     private void initView() {
         findViewById(R.id.btn_pen_hand).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_pen_copy).setOnClickListener(mOnClickListener);
-        findViewById(R.id.btn_pen_eraser).setOnClickListener(mOnClickListener);
+//        findViewById(R.id.btn_pen_eraser).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_pen_text).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_hand_write).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_arrow).setOnClickListener(mOnClickListener);
@@ -309,8 +335,8 @@ public class GraffitiActivity extends AppCompatActivity {
         findViewById(R.id.btn_fill_circle).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_holl_rect).setOnClickListener(mOnClickListener);
         findViewById(R.id.btn_fill_rect).setOnClickListener(mOnClickListener);
-        findViewById(R.id.btn_clear).setOnClickListener(mOnClickListener);
-        findViewById(R.id.btn_undo).setOnClickListener(mOnClickListener);
+//        findViewById(R.id.btn_clear).setOnClickListener(mOnClickListener);
+//        findViewById(R.id.btn_undo).setOnClickListener(mOnClickListener);
         findViewById(R.id.graffiti_text_edit).setOnClickListener(mOnClickListener);
         findViewById(R.id.graffiti_text_remove).setOnClickListener(mOnClickListener);
         mShapeModeContainer = findViewById(R.id.bar_shape_mode);
@@ -493,6 +519,10 @@ public class GraffitiActivity extends AppCompatActivity {
                 mGraffitiView.rotate(mGraffitiView.getRotateDegree() + 90);
             }
         });
+        //橡皮檫
+        findViewById(R.id.graffiti_eraser).setOnClickListener(mOnClickListener);
+        //撤销
+        findViewById(R.id.graffiti_undo).setOnClickListener(mOnClickListener);
     }
 
     /**
@@ -506,6 +536,61 @@ public class GraffitiActivity extends AppCompatActivity {
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
         return (float) Math.sqrt(x * x + y * y);
+    }
+
+    private void showParamsPopupWindow(View anchor, int drawMode) {
+//        if (BitmapUtils.isLandScreen(activity)) {
+//            if (drawMode == STROKE_TYPE_DRAW) {
+//                strokePopupWindow.showAsDropDown(anchor, ScreenUtils.dip2px(activity, -pupWindowsDPWidth), -anchor.getHeight());
+//            } else {
+//                eraserPopupWindow.showAsDropDown(anchor, ScreenUtils.dip2px(activity, -pupWindowsDPWidth), -anchor.getHeight());
+//            }
+//        } else {
+        if (drawMode == STROKE_TYPE_DRAW) {
+//                strokePopupWindow.showAsDropDown(anchor, 0, ScreenUtils.dip2px(activity, -strokePupWindowsDPHeight) - anchor.getHeight());
+            strokePopupWindow.showAsDropDown(anchor, 0, 0);
+        } else {
+//                eraserPopupWindow.showAsDropDown(anchor, 0, ScreenUtils.dip2px(activity, -eraserPupWindowsDPHeight) - anchor.getHeight());
+            eraserPopupWindow.showAsDropDown(anchor, 0, 0);
+        }
+//        }
+    }
+
+    /**
+     * 橡皮檫大小改变
+     *
+     * @param size
+     */
+    @Override
+    public void onEraserSizeChanged(int size) {
+//        mPaintSizeBar.setProgress((int) (mGraffitiView.getPaintSize() + 0.5f));
+//        mShapeModeContainer.setVisibility(View.VISIBLE);
+//        mGraffitiView.setPen(GraffitiView.Pen.ERASER);
+        mGraffitiView.setPaintSize(size);
+        Log.i("橡皮檫大小", size + "");
+    }
+
+    /**
+     * 清空画布
+     */
+    @Override
+    public void onEraserCleared() {
+        new AlertDialog.Builder(Graffiti2Activity.this)
+                .setTitle(R.string.graffiti_clear_screen)
+                .setMessage(R.string.graffiti_cant_undo_after_clearing)
+                .setPositiveButton(R.string.graffiti_enter, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        mGraffitiView.clear();
+                    }
+                })
+                .setNegativeButton(R.string.graffiti_cancel, null)
+                .show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        PopUtils.getInstance(this).destroy();
+        super.onDestroy();
     }
 
     private class GraffitiOnClickListener implements View.OnClickListener {
@@ -526,15 +611,22 @@ public class GraffitiActivity extends AppCompatActivity {
                 mShapeModeContainer.setVisibility(View.VISIBLE);
                 mGraffitiView.setPen(GraffitiView.Pen.COPY);
                 mDone = true;
-            } else if (v.getId() == R.id.btn_pen_eraser) {
-                mPaintSizeBar.setProgress((int) (mGraffitiView.getPaintSize() + 0.5f));
-                mShapeModeContainer.setVisibility(View.VISIBLE);
-                mGraffitiView.setPen(GraffitiView.Pen.ERASER);
-                mDone = true;
+//            } else if (v.getId() == R.id.btn_pen_eraser) {//橡皮檫
+//                mPaintSizeBar.setProgress((int) (mGraffitiView.getPaintSize() + 0.5f));
+//                mShapeModeContainer.setVisibility(View.VISIBLE);
+//                mGraffitiView.setPen(GraffitiView.Pen.ERASER);
+//                mDone = true;
             } else if (v.getId() == R.id.btn_pen_text) {
                 mPaintSizeBar.setProgress((int) (mGraffitiView.getTextSize() + 0.5f));
                 mShapeModeContainer.setVisibility(View.GONE);
                 mGraffitiView.setPen(GraffitiView.Pen.TEXT);
+                mDone = true;
+            } else if (v.getId() == R.id.graffiti_eraser) {//橡皮檫
+                mGraffitiView.setShape(GraffitiView.Shape.HAND_WRITE);
+                mShapeModeContainer.setVisibility(View.VISIBLE);
+                mGraffitiView.setPen(GraffitiView.Pen.ERASER);
+                PopUtils.getInstance(Graffiti2Activity.this).showEraserPop(v);
+                ((IconicsImageView) v).setColor(params.colorSelected);
                 mDone = true;
             }
             if (mDone) {
@@ -546,23 +638,27 @@ public class GraffitiActivity extends AppCompatActivity {
                 return;
             }
 
-            if (v.getId() == R.id.btn_clear) {
-                new AlertDialog.Builder(GraffitiActivity.this)
-                        .setTitle(R.string.graffiti_clear_screen)
-                        .setMessage(R.string.graffiti_cant_undo_after_clearing)
-                        .setPositiveButton(R.string.graffiti_enter, new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                mGraffitiView.clear();
-                            }
-                        })
-                        .setNegativeButton(R.string.graffiti_cancel, null)
-                        .show();
-                mDone = true;
-            } else if (v.getId() == R.id.btn_undo) {
+//            if (v.getId() == R.id.btn_clear) {//清屏
+//                new AlertDialog.Builder(Graffiti2Activity.this)
+//                        .setTitle(R.string.graffiti_clear_screen)
+//                        .setMessage(R.string.graffiti_cant_undo_after_clearing)
+//                        .setPositiveButton(R.string.graffiti_enter, new DialogInterface.OnClickListener() {
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                mGraffitiView.clear();
+//                            }
+//                        })
+//                        .setNegativeButton(R.string.graffiti_cancel, null)
+//                        .show();
+//                mDone = true;
+//            } else if (v.getId() == R.id.btn_undo) {//撤销
+//                mGraffitiView.undo();
+//                mDone = true;
+//            } else
+            if (v.getId() == R.id.graffiti_undo) {//撤销
                 mGraffitiView.undo();
                 mDone = true;
             } else if (v.getId() == R.id.btn_set_color) {
-                new ColorPickerDialog(GraffitiActivity.this, mGraffitiView.getGraffitiColor().getColor(), "画笔颜色",
+                new ColorPickerDialog(Graffiti2Activity.this, mGraffitiView.getGraffitiColor().getColor(), "画笔颜色",
                         new ColorPickerDialog.OnColorChangedListener() {
                             public void colorChanged(int color) {
                                 mBtnColor.setBackgroundColor(color);
@@ -607,7 +703,7 @@ public class GraffitiActivity extends AppCompatActivity {
                     finish();
                     return;
                 }
-                new AlertDialog.Builder(GraffitiActivity.this).setTitle(R.string.graffiti_saving_picture)
+                new AlertDialog.Builder(Graffiti2Activity.this).setTitle(R.string.graffiti_saving_picture)
                         .setIcon(android.R.drawable.ic_dialog_info)
                         .setPositiveButton(R.string.graffiti_enter, new DialogInterface.OnClickListener() {
                             @Override
@@ -808,5 +904,14 @@ public class GraffitiActivity extends AppCompatActivity {
             mGraffitiView.setAmplifierScale(-1);
         }
     }
+
+    int pupWindowsDPWidth = 300;//弹窗宽度，单位DP
+    int strokePupWindowsDPHeight = 275;//画笔弹窗高度，单位DP
+    int eraserPupWindowsDPHeight = 90;//橡皮擦弹窗高度，单位DP
+    private SeekBar strokeSeekBar, strokeAlphaSeekBar, eraserSeekBar;
+    private Button eraserBtnClear;
+    private ImageView strokeImageView, strokeAlphaImage, eraserImageView;//画笔宽度，画笔不透明度，橡皮擦宽度IV
+    PopupWindow strokePopupWindow, eraserPopupWindow, textPopupWindow;//画笔、橡皮擦参数设置弹窗实例
+    private View popupStrokeLayout, popupEraserLayout, popupTextLayout;//画笔、橡皮擦弹窗布局
 
 }
