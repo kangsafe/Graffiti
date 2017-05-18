@@ -1,0 +1,52 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion COMPILE_SDK_VERSION as int
+    buildToolsVersion BUILD_TOOLS_VERSION
+
+    defaultConfig {
+        minSdkVersion MIN_SDK_VERSION as int
+        targetSdkVersion TARGET_SDK_VERSION as int
+        versionCode VERSION_CODE as int
+        versionName VERSION_NAME
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'com.forward.androids:androids:1.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:support-v4:25.3.1'
+    //权限
+    compile 'com.github.hotchemi:permissionsdispatcher:2.4.0'
+    annotationProcessor 'com.github.hotchemi:permissionsdispatcher-processor:2.4.0'
+}
+
+
+def getLocalProperty(String key) {
+    if (!localPropertiesFile().exists()) {
+        return null
+    }
+
+    Properties properties = new Properties()
+    properties.load(localPropertiesFile().newDataInputStream())
+    return properties.getProperty(key)
+}
+
+def localPropertiesFile() {
+    return project.rootProject.file('local.properties');
+}
+
+def isForUpload2Maven() {
+    return getLocalProperty("for.upload") == "true"
+}
+
+if (isForUpload2Maven()) {
+    apply from: "https://raw.githubusercontent.com/1993hzw/common/master/bintrayUpload.gradle"
+}
